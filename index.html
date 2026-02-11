@@ -785,60 +785,115 @@
         // QUIZ DATA - 10 WEEKS
         // =============================================
         const allQuizData = {
-            1: {
-                title: "Week 1: Introduction to Risk Assessment",
-                subtitle: "Fundamentals and key concepts",
+            1:{
+                title: "Week 1: Information Security and Risk Management",
+                subtitle: "ICT931 – Foundations of Risk and Contingency Planning",
                 questions: [
                     {
                         id: 1,
                         type: "single",
-                        question: "What is the primary purpose of a risk assessment?",
+                        question: "Information security is primarily concerned with protecting which three elements?",
                         options: [
-                            "To eliminate all workplace hazards completely",
-                            "To identify hazards and evaluate the risks they pose",
-                            "To create paperwork for regulatory compliance",
-                            "To assign blame when accidents occur"
+                            "Authentication, Authorization, Accounting",
+                            "Confidentiality, Integrity, Availability",
+                            "Privacy, Usability, Accessibility",
+                            "Hardware, Software, Network"
                         ],
                         correct: 1
                     },
                     {
                         id: 2,
+                        type: "truefalse",
+                        question: "A threat is a flaw or weakness in a system that can be exploited.",
+                        correct: false
+                    },
+                    {
+                        id: 3,
                         type: "single",
-                        question: "How often should risk assessments be reviewed?",
+                        question: "A vulnerability is best described as:",
                         options: [
-                            "Only when an accident occurs",
-                            "Once every 10 years",
-                            "Regularly and when significant changes occur",
-                            "Never, once done they are permanent"
+                            "A person attempting an attack",
+                            "A flaw or weakness that can be exploited",
+                            "A countermeasure to prevent attacks",
+                            "A completed security breach"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        id: 4,
+                        type: "multiple",
+                        question: "Which of the following are key stages of risk identification? (Select all that apply)",
+                        options: [
+                            "Identify information assets",
+                            "Classify and categorize assets",
+                            "Eliminate all threats immediately",
+                            "Prioritize assets by importance"
+                        ],
+                        correct: [0, 1, 3]
+                    },
+                    {
+                        id: 5,
+                        type: "fillblank",
+                        question: "Risk management is the process of identifying and _______ the risks to information assets.",
+                        correct: ["controlling", "Control", "control"]
+                    },
+                    {
+                        id: 6,
+                        type: "single",
+                        question: "Which document focuses on identifying, classifying, responding to, and recovering from incidents?",
+                        options: [
+                            "Business Continuity Plan (BCP)",
+                            "Incident Response Plan (IRP)",
+                            "Enterprise Information Security Policy (EISP)",
+                            "Risk Rating Worksheet"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        id: 7,
+                        type: "single",
+                        question: "Which risk control approach involves shifting risk to another organization, such as through insurance?",
+                        options: [
+                            "Defense",
+                            "Mitigation",
+                            "Transferal",
+                            "Termination"
                         ],
                         correct: 2
                     },
                     {
-                        id: 3,
+                        id: 8,
                         type: "truefalse",
-                        question: "A hazard and a risk are the same thing.",
-                        correct: false
+                        question: "The Disaster Recovery Plan (DRP) focuses on restoring systems after a disaster.",
+                        correct: true
                     },
                     {
-                        id: 4,
-                        type: "fillblank",
-                        question: "The formula for calculating risk is: Risk = _______ × Severity",
-                        correct: ["likelihood", "probability", "Likelihood", "Probability"]
-                    },
-                    {
-                        id: 5,
-                        type: "multiple",
-                        question: "Which of the following are key steps in the risk assessment process? (Select all that apply)",
+                        id: 9,
+                        type: "single",
+                        question: "Enterprise Information Security Policy (EISP) is primarily:",
                         options: [
-                            "Identify hazards",
-                            "Evaluate the risks",
-                            "Ignore low-probability events",
-                            "Implement control measures"
+                            "A technical configuration document",
+                            "An executive-level strategic security document",
+                            "A daily operational checklist",
+                            "A disaster recovery manual"
                         ],
-                        correct: [0, 1, 3]
+                        correct: 1
+                    },
+                    {
+                        id: 10,
+                        type: "multiple",
+                        question: "Contingency planning includes which of the following components? (Select all that apply)",
+                        options: [
+                            "Business Impact Analysis (BIA)",
+                            "Incident Response Plan (IRP)",
+                            "Disaster Recovery Plan (DRP)",
+                            "Business Continuity Plan (BCP)"
+                        ],
+                        correct: [0, 1, 2, 3]
                     }
                 ]
             },
+
             2: {
                 title: "Week 2: Hazard Identification",
                 subtitle: "Recognizing workplace hazards",
