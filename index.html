@@ -6,6 +6,9 @@
     <title>Risk Assessment Quiz</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         :root {
             --bg-dark: #0f1419;
@@ -38,7 +41,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -64,6 +67,17 @@
         .header .subtitle {
             color: var(--text-secondary);
             font-size: 1rem;
+        }
+
+        .week-badge {
+            display: inline-block;
+            background: var(--accent-primary);
+            color: var(--bg-dark);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 8px;
         }
 
         .question-card {
@@ -129,7 +143,7 @@
             border: 2px solid transparent;
         }
 
-        .option-item:hover {
+        .option-item:hover:not(.disabled) {
             background: #2a323c;
             border-color: var(--accent-primary);
         }
@@ -147,6 +161,11 @@
         .option-item.wrong {
             background: rgba(255, 107, 107, 0.15);
             border-color: var(--accent-wrong);
+        }
+
+        .option-item.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
         }
 
         .option-radio, .option-checkbox {
@@ -202,6 +221,11 @@
             box-shadow: 0 0 0 4px rgba(0, 217, 165, 0.1);
         }
 
+        .fill-blank-input:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
         .submit-btn {
             width: 100%;
             background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
@@ -217,7 +241,7 @@
             font-family: 'DM Sans', sans-serif;
         }
 
-        .submit-btn:hover {
+        .submit-btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 8px 24px rgba(0, 217, 165, 0.3);
         }
@@ -237,16 +261,32 @@
             animation: fadeIn 0.3s ease;
         }
 
-        .feedback.correct {
-            background: rgba(0, 217, 165, 0.15);
-            color: var(--accent-correct);
-            border: 1px solid var(--accent-correct);
+        .feedback.submitted {
+            background: rgba(0, 217, 165, 0.1);
+            color: var(--accent-primary);
+            border: 1px solid var(--accent-primary);
         }
 
-        .feedback.wrong {
-            background: rgba(255, 107, 107, 0.15);
+        /* Connection status */
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            z-index: 1000;
+        }
+
+        .connection-status.connected {
+            background: rgba(0, 217, 165, 0.2);
+            color: var(--accent-correct);
+        }
+
+        .connection-status.disconnected {
+            background: rgba(255, 107, 107, 0.2);
             color: var(--accent-wrong);
-            border: 1px solid var(--accent-wrong);
         }
 
         /* Navigation */
@@ -257,6 +297,7 @@
             background: var(--bg-card);
             border-bottom: 1px solid var(--border-color);
             overflow-x: auto;
+            align-items: center;
         }
 
         .nav-tab {
@@ -282,7 +323,37 @@
             color: var(--bg-dark);
         }
 
-        /* Teacher Dashboard */
+        .week-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+            padding-left: 20px;
+            border-left: 1px solid var(--border-color);
+        }
+
+        .week-selector label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .week-selector select {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .week-selector select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        /* Dashboard */
         .dashboard {
             padding: 20px;
         }
@@ -370,7 +441,46 @@
             color: var(--accent-wrong);
         }
 
-        /* QR Code Generator */
+        /* Student summary table */
+        .student-summary-table {
+            width: 100%;
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            margin-bottom: 32px;
+        }
+
+        .student-summary-table th,
+        .student-summary-table td {
+            padding: 12px 14px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+
+        .student-summary-table th {
+            background: var(--bg-input);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .student-summary-table td:first-child {
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .student-summary-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .cell-correct { color: var(--accent-correct); }
+        .cell-wrong { color: var(--accent-wrong); }
+        .cell-pending { color: var(--text-muted); }
+
+        /* QR Codes */
         .qr-generator {
             padding: 20px;
         }
@@ -390,23 +500,33 @@
         }
 
         .qr-card h3 {
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             font-size: 1rem;
+        }
+
+        .qr-card .question-preview {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            height: 32px;
+            overflow: hidden;
+            line-height: 1.3;
         }
 
         .qr-code-container {
             background: white;
-            padding: 16px;
+            padding: 12px;
             border-radius: 8px;
             display: inline-block;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .qr-url {
             font-family: 'Space Mono', monospace;
-            font-size: 0.7rem;
+            font-size: 0.6rem;
             color: var(--text-muted);
             word-break: break-all;
+            margin-bottom: 8px;
         }
 
         .url-input-section {
@@ -443,32 +563,14 @@
             background: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 6px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             cursor: pointer;
-            margin-top: 8px;
             transition: all 0.2s;
         }
 
         .download-btn:hover {
-            background: var(--accent-primary);
-            color: var(--bg-dark);
-        }
-
-        .refresh-btn {
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: 'DM Sans', sans-serif;
-        }
-
-        .refresh-btn:hover {
             background: var(--accent-primary);
             color: var(--bg-dark);
         }
@@ -501,14 +603,14 @@
             margin-bottom: 16px;
         }
 
-        /* Student name input */
-        .name-input-overlay {
+        /* Password & Name Input Overlays */
+        .overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(15, 20, 25, 0.95);
+            background: rgba(15, 20, 25, 0.98);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -516,7 +618,7 @@
             padding: 20px;
         }
 
-        .name-input-card {
+        .overlay-card {
             background: var(--bg-card);
             padding: 40px;
             border-radius: 16px;
@@ -526,16 +628,16 @@
             border: 1px solid var(--border-color);
         }
 
-        .name-input-card h2 {
+        .overlay-card h2 {
             margin-bottom: 8px;
         }
 
-        .name-input-card p {
+        .overlay-card p {
             color: var(--text-secondary);
             margin-bottom: 24px;
         }
 
-        .name-input-card input {
+        .overlay-card input {
             width: 100%;
             background: var(--bg-input);
             border: 2px solid var(--border-color);
@@ -548,209 +650,827 @@
             font-family: 'DM Sans', sans-serif;
         }
 
-        .name-input-card input:focus {
+        .overlay-card input:focus {
             outline: none;
             border-color: var(--accent-primary);
         }
 
+        .overlay-card .error-msg {
+            color: var(--accent-wrong);
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+
+        /* Setup Card */
+        .setup-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .setup-card h2 {
+            margin-bottom: 16px;
+            color: var(--accent-primary);
+        }
+
+        .setup-card ol {
+            padding-left: 20px;
+            color: var(--text-secondary);
+        }
+
+        .setup-card li {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .setup-card code {
+            background: var(--bg-input);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-primary);
+        }
+
+        .setup-card .warning {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid var(--accent-wrong);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 16px;
+            color: var(--accent-wrong);
+            font-size: 0.9rem;
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 217, 165, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .logout-btn:hover {
+            border-color: var(--accent-wrong);
+            color: var(--accent-wrong);
+        }
+
         @media (max-width: 600px) {
-            .header h1 {
-                font-size: 1.5rem;
-            }
-
-            .question-card {
-                padding: 24px;
-            }
-
-            .question-text {
-                font-size: 1.1rem;
-            }
-
-            .nav-tabs {
-                padding: 12px;
-            }
-
-            .nav-tab {
-                padding: 8px 14px;
-                font-size: 0.9rem;
-            }
+            .header h1 { font-size: 1.5rem; }
+            .question-card { padding: 24px; }
+            .question-text { font-size: 1.1rem; }
+            .nav-tabs { padding: 12px; flex-wrap: wrap; }
+            .nav-tab { padding: 8px 14px; font-size: 0.9rem; }
+            .week-selector { margin-left: 0; padding-left: 0; border-left: none; margin-top: 10px; width: 100%; }
+            .student-summary-table { font-size: 0.7rem; }
+            .student-summary-table th, .student-summary-table td { padding: 8px 4px; }
+            .qr-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
         }
     </style>
 </head>
 <body>
+    <div id="connection-status" class="connection-status disconnected" style="display: none;">⚫ Connecting...</div>
     <div id="app"></div>
 
     <script>
         // =============================================
-        // QUIZ DATA - CUSTOMIZE YOUR QUESTIONS HERE
+        // CONFIGURATION
         // =============================================
-        const quizData = {
-            title: "Risk Assessment Quiz",
-            subtitle: "Test your knowledge on workplace safety",
-            questions: [
-                {
-                    id: 1,
-                    type: "single", // MCQ with single answer
-                    question: "What is the primary purpose of a risk assessment?",
-                    options: [
-                        "To eliminate all workplace hazards completely",
-                        "To identify hazards and evaluate the risks they pose",
-                        "To create paperwork for regulatory compliance",
-                        "To assign blame when accidents occur"
-                    ],
-                    correct: 1 // Index of correct answer (0-based)
-                },
-                {
-                    id: 2,
-                    type: "single",
-                    question: "How often should risk assessments be reviewed?",
-                    options: [
-                        "Only when an accident occurs",
-                        "Once every 10 years",
-                        "Regularly and when significant changes occur",
-                        "Never, once done they are permanent"
-                    ],
-                    correct: 2
-                },
-                {
-                    id: 3,
-                    type: "multiple", // MCQ with multiple answers
-                    question: "Which of the following are key steps in the risk assessment process? (Select all that apply)",
-                    options: [
-                        "Identify hazards",
-                        "Evaluate the risks",
-                        "Ignore low-probability events",
-                        "Implement control measures",
-                        "Record and review findings"
-                    ],
-                    correct: [0, 1, 3, 4] // Indices of correct answers
-                },
-                {
-                    id: 4,
-                    type: "truefalse",
-                    question: "A hazard and a risk are the same thing.",
-                    correct: false
-                },
-                {
-                    id: 5,
-                    type: "truefalse",
-                    question: "The hierarchy of controls prioritizes elimination of hazards over use of PPE.",
-                    correct: true
-                },
-                {
-                    id: 6,
-                    type: "fillblank",
-                    question: "The formula for calculating risk is: Risk = _______ × Severity",
-                    correct: ["likelihood", "probability", "Likelihood", "Probability"],
-                    caseSensitive: false
-                },
-                {
-                    id: 7,
-                    type: "single",
-                    question: "In the hierarchy of controls, which method is considered MOST effective?",
-                    options: [
-                        "Personal Protective Equipment (PPE)",
-                        "Administrative Controls",
-                        "Engineering Controls",
-                        "Elimination"
-                    ],
-                    correct: 3
-                },
-                {
-                    id: 8,
-                    type: "multiple",
-                    question: "Who has responsibilities in workplace risk management? (Select all that apply)",
-                    options: [
-                        "Employers",
-                        "Employees",
-                        "Safety officers only",
-                        "Contractors and visitors"
-                    ],
-                    correct: [0, 1, 3]
-                },
-                {
-                    id: 9,
-                    type: "fillblank",
-                    question: "PPE stands for Personal _______ Equipment.",
-                    correct: ["Protective", "protective", "PROTECTIVE"],
-                    caseSensitive: false
-                },
-                {
-                    id: 10,
-                    type: "truefalse",
-                    question: "Risk assessments only need to consider physical hazards, not psychological ones.",
-                    correct: false
-                }
-            ]
+        
+        // 🔐 TEACHER PASSWORD - Change this!
+        const TEACHER_PASSWORD = "teacher123";
+
+        // 🔥 FIREBASE CONFIG - Replace with your credentials
+        const firebaseConfig = {
+        apiKey: "AIzaSyDeUk5gl2l-7IxZpgQORzVJOQOIPJNun_A",
+        authDomain: "ict931quiz.firebaseapp.com",
+        projectId: "ict931quiz",
+        storageBucket: "ict931quiz.firebasestorage.app",
+        messagingSenderId: "1091766957063",
+        appId: "1:1091766957063:web:325ae9325c3ae299e5e6a2",
+        measurementId: "G-C7JH0PZFG2"
+        };
+
+
+        // =============================================
+        // QUIZ DATA - 10 WEEKS
+        // =============================================
+        const allQuizData = {
+            1: {
+                title: "Week 1: Introduction to Risk Assessment",
+                subtitle: "Fundamentals and key concepts",
+                questions: [
+                    {
+                        id: 1,
+                        type: "single",
+                        question: "What is the primary purpose of a risk assessment?",
+                        options: [
+                            "To eliminate all workplace hazards completely",
+                            "To identify hazards and evaluate the risks they pose",
+                            "To create paperwork for regulatory compliance",
+                            "To assign blame when accidents occur"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        id: 2,
+                        type: "single",
+                        question: "How often should risk assessments be reviewed?",
+                        options: [
+                            "Only when an accident occurs",
+                            "Once every 10 years",
+                            "Regularly and when significant changes occur",
+                            "Never, once done they are permanent"
+                        ],
+                        correct: 2
+                    },
+                    {
+                        id: 3,
+                        type: "truefalse",
+                        question: "A hazard and a risk are the same thing.",
+                        correct: false
+                    },
+                    {
+                        id: 4,
+                        type: "fillblank",
+                        question: "The formula for calculating risk is: Risk = _______ × Severity",
+                        correct: ["likelihood", "probability", "Likelihood", "Probability"]
+                    },
+                    {
+                        id: 5,
+                        type: "multiple",
+                        question: "Which of the following are key steps in the risk assessment process? (Select all that apply)",
+                        options: [
+                            "Identify hazards",
+                            "Evaluate the risks",
+                            "Ignore low-probability events",
+                            "Implement control measures"
+                        ],
+                        correct: [0, 1, 3]
+                    }
+                ]
+            },
+            2: {
+                title: "Week 2: Hazard Identification",
+                subtitle: "Recognizing workplace hazards",
+                questions: [
+                    {
+                        id: 1,
+                        type: "single",
+                        question: "Which of the following is an example of a physical hazard?",
+                        options: [
+                            "Stress from workload",
+                            "Wet floor causing slips",
+                            "Chemical exposure",
+                            "Workplace bullying"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        id: 2,
+                        type: "multiple",
+                        question: "Which methods can be used to identify hazards? (Select all that apply)",
+                        options: [
+                            "Workplace inspections",
+                            "Reviewing incident reports",
+                            "Ignoring near-misses",
+                            "Consulting with employees"
+                        ],
+                        correct: [0, 1, 3]
+                    },
+                    {
+                        id: 3,
+                        type: "truefalse",
+                        question: "Biological hazards include bacteria, viruses, and fungi.",
+                        correct: true
+                    },
+                    {
+                        id: 4,
+                        type: "single",
+                        question: "Ergonomic hazards are related to:",
+                        options: [
+                            "Chemical substances",
+                            "Radiation exposure",
+                            "Body positioning and repetitive movements",
+                            "Fire risks"
+                        ],
+                        correct: 2
+                    },
+                    {
+                        id: 5,
+                        type: "fillblank",
+                        question: "A _______ is something that has the potential to cause harm.",
+                        correct: ["hazard", "Hazard", "HAZARD"]
+                    }
+                ]
+            },
+            3: {
+                title: "Week 3: Risk Evaluation",
+                subtitle: "Assessing likelihood and severity",
+                questions: [
+                    {
+                        id: 1,
+                        type: "single",
+                        question: "In a 5x5 risk matrix, what does the number represent?",
+                        options: [
+                            "Number of employees",
+                            "Cost in thousands",
+                            "Risk level (likelihood × severity)",
+                            "Days of training required"
+                        ],
+                        correct: 2
+                    },
+                    {
+                        id: 2,
+                        type: "truefalse",
+                        question: "High likelihood combined with high severity always results in an unacceptable risk.",
+                        correct: true
+                    },
+                    {
+                        id: 3,
+                        type: "multiple",
+                        question: "Which factors affect the LIKELIHOOD of a risk occurring? (Select all that apply)",
+                        options: [
+                            "Frequency of exposure",
+                            "Existing control measures",
+                            "Cost of equipment",
+                            "Training level of workers"
+                        ],
+                        correct: [0, 1, 3]
+                    },
+                    {
+                        id: 4,
+                        type: "single",
+                        question: "What does ALARP stand for?",
+                        options: [
+                            "As Low As Reasonably Practicable",
+                            "Always Look At Risk Prevention",
+                            "Assess Likelihood And Risk Potential",
+                            "Alternative Low-risk Action Plan"
+                        ],
+                        correct: 0
+                    },
+                    {
+                        id: 5,
+                        type: "fillblank",
+                        question: "The potential consequences of a hazard are called its _______.",
+                        correct: ["severity", "Severity", "SEVERITY"]
+                    }
+                ]
+            },
+            4: {
+                title: "Week 4: Hierarchy of Controls",
+                subtitle: "Control measures from most to least effective",
+                questions: [
+                    {
+                        id: 1,
+                        type: "single",
+                        question: "In the hierarchy of controls, which is MOST effective?",
+                        options: [
+                            "Personal Protective Equipment",
+                            "Administrative Controls",
+                            "Engineering Controls",
+                            "Elimination"
+                        ],
+                        correct: 3
+                    },
+                    {
+                        id: 2,
+                        type: "single",
+                        question: "Installing a machine guard is an example of:",
+                        options: [
+                            "Elimination",
+                            "Substitution",
+                            "Engineering Controls",
+                            "Administrative Controls"
+                        ],
+                        correct: 2
+                    },
+                    {
+                        id: 3,
+                        type: "truefalse",
+                        question: "PPE should be the first line of defense against workplace hazards.",
+                        correct: false
+                    },
+                    {
+                        id: 4,
+                        type: "multiple",
+                        question: "Which are examples of administrative controls? (Select all that apply)",
+                        options: [
+                            "Job rotation",
+                            "Safety training",
+                            "Installing ventilation",
+                            "Warning signs"
+                        ],
+                        correct: [0, 1, 3]
+                    },
+                    {
+                        id: 5,
+                        type: "fillblank",
+                        question: "Replacing a toxic chemical with a safer alternative is called _______.",
+                        correct: ["substitution", "Substitution", "SUBSTITUTION"]
+                    }
+                ]
+            },
+            5: {
+                title: "Week 5: Documentation & Recording",
+                subtitle: "Proper record keeping",
+                questions: [
+                    {
+                        id: 1,
+                        type: "truefalse",
+                        question: "Risk assessments must always be documented in writing.",
+                        correct: true
+                    },
+                    {
+                        id: 2,
+                        type: "multiple",
+                        question: "What should a risk assessment document include? (Select all that apply)",
+                        options: [
+                            "Identified hazards",
+                            "Employee salaries",
+                            "Control measures implemented",
+                            "Review dates"
+                        ],
+                        correct: [0, 2, 3]
+                    },
+                    {
+                        id: 3,
+                        type: "single",
+                        question: "How long should risk assessment records typically be retained?",
+                        options: [
+                            "1 month",
+                            "1 year",
+                            "At least 3-5 years or as required by law",
+                            "Records don't need to be kept"
+                        ],
+                        correct: 2
+                    },
+                    {
+                        id: 4,
+                        type: "single",
+                        question: "Who should have access to risk assessment documents?",
+                        options: [
+                            "Only senior management",
+                            "Only the safety officer",
+                            "Relevant employees and stakeholders",
+                            "No one - they are confidential"
+                        ],
+                        correct: 2
+                    },
+                    {
+                        id: 5,
+                        type: "fillblank",
+                        question: "A written record of a workplace incident is called an _______ report.",
+                        correct: ["incident", "Incident", "INCIDENT", "accident", "Accident"]
+                    }
+                ]
+            },
+            6: {
+                title: "Week 6: Legal Requirements",
+                subtitle: "Regulatory compliance",
+                questions: [
+                    {
+                        id: 1,
+                        type: "truefalse",
+                        question: "Employers have a legal duty to conduct risk assessments.",
+                        correct: true
+                    },
+                    {
+                        id: 2,
+                        type: "single",
+                        question: "Under most health and safety laws, who has the PRIMARY responsibility for workplace safety?",
+                        options: [
+                            "Employees only",
+                            "The government",
+                            "The employer",
+                            "Insurance companies"
+                        ],
+                        correct: 2
+                    },
+                    {
+                        id: 3,
+                        type: "multiple",
+                        question: "Employees have duties to: (Select all that apply)",
+                        options: [
+                            "Follow safety procedures",
+                            "Report hazards",
+                            "Conduct their own risk assessments",
+                            "Use provided safety equipment properly"
+                        ],
+                        correct: [0, 1, 3]
+                    },
+                    {
+                        id: 4,
+                        type: "single",
+                        question: "Failure to comply with health and safety regulations can result in:",
+                        options: [
+                            "Only verbal warnings",
+                            "Fines, prosecution, or imprisonment",
+                            "Tax benefits",
+                            "Nothing significant"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        id: 5,
+                        type: "fillblank",
+                        question: "A _______ competent person should conduct or oversee risk assessments.",
+                        correct: ["competent", "Competent", "trained", "Trained", "qualified", "Qualified"]
+                    }
+                ]
+            },
+            7: {
+                title: "Week 7: Specific Hazard Types",
+                subtitle: "Chemical, biological, and physical hazards",
+                questions: [
+                    {
+                        id: 1,
+                        type: "single",
+                        question: "What does COSHH stand for?",
+                        options: [
+                            "Control of Substances Hazardous to Health",
+                            "Company Occupational Safety and Health Handbook",
+                            "Certified Occupational Safety and Health Handler",
+                            "Complete Overview of Safety and Health Hazards"
+                        ],
+                        correct: 0
+                    },
+                    {
+                        id: 2,
+                        type: "multiple",
+                        question: "Which are examples of biological hazards? (Select all that apply)",
+                        options: [
+                            "Mold spores",
+                            "Loud noise",
+                            "Blood-borne pathogens",
+                            "Electricity"
+                        ],
+                        correct: [0, 2]
+                    },
+                    {
+                        id: 3,
+                        type: "truefalse",
+                        question: "Radiation is only a concern in nuclear facilities.",
+                        correct: false
+                    },
+                    {
+                        id: 4,
+                        type: "single",
+                        question: "Manual handling injuries are most commonly associated with:",
+                        options: [
+                            "Chemical burns",
+                            "Back and musculoskeletal problems",
+                            "Hearing loss",
+                            "Eye strain"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        id: 5,
+                        type: "fillblank",
+                        question: "Safety Data Sheets (SDS) provide information about _______ substances.",
+                        correct: ["chemical", "Chemical", "hazardous", "Hazardous"]
+                    }
+                ]
+            },
+            8: {
+                title: "Week 8: Emergency Preparedness",
+                subtitle: "Planning for emergencies",
+                questions: [
+                    {
+                        id: 1,
+                        type: "multiple",
+                        question: "An emergency response plan should include: (Select all that apply)",
+                        options: [
+                            "Evacuation procedures",
+                            "Emergency contact numbers",
+                            "Employee vacation schedules",
+                            "Assembly points"
+                        ],
+                        correct: [0, 1, 3]
+                    },
+                    {
+                        id: 2,
+                        type: "truefalse",
+                        question: "Fire drills should be conducted at least annually.",
+                        correct: true
+                    },
+                    {
+                        id: 3,
+                        type: "single",
+                        question: "First aid equipment should be:",
+                        options: [
+                            "Locked away to prevent theft",
+                            "Easily accessible and clearly marked",
+                            "Only available to trained first aiders",
+                            "Kept in the manager's office"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        id: 4,
+                        type: "single",
+                        question: "Who should be trained in emergency procedures?",
+                        options: [
+                            "Only managers",
+                            "Only safety officers",
+                            "All employees",
+                            "Only new employees"
+                        ],
+                        correct: 2
+                    },
+                    {
+                        id: 5,
+                        type: "fillblank",
+                        question: "A designated meeting location after evacuation is called an _______ point.",
+                        correct: ["assembly", "Assembly", "ASSEMBLY", "muster", "Muster"]
+                    }
+                ]
+            },
+            9: {
+                title: "Week 9: Monitoring & Review",
+                subtitle: "Continuous improvement",
+                questions: [
+                    {
+                        id: 1,
+                        type: "single",
+                        question: "How often should risk assessments be reviewed?",
+                        options: [
+                            "Never - they are permanent",
+                            "Only after accidents",
+                            "Regularly and when circumstances change",
+                            "Every 10 years"
+                        ],
+                        correct: 2
+                    },
+                    {
+                        id: 2,
+                        type: "multiple",
+                        question: "What might trigger a risk assessment review? (Select all that apply)",
+                        options: [
+                            "New equipment introduced",
+                            "An incident or near-miss",
+                            "Employee birthday",
+                            "Changes in legislation"
+                        ],
+                        correct: [0, 1, 3]
+                    },
+                    {
+                        id: 3,
+                        type: "truefalse",
+                        question: "Leading indicators predict potential problems before they occur.",
+                        correct: true
+                    },
+                    {
+                        id: 4,
+                        type: "single",
+                        question: "Which is a lagging indicator?",
+                        options: [
+                            "Safety training completion rates",
+                            "Number of safety inspections",
+                            "Injury and illness rates",
+                            "Near-miss reports submitted"
+                        ],
+                        correct: 2
+                    },
+                    {
+                        id: 5,
+                        type: "fillblank",
+                        question: "The process of continuous improvement is often called the Plan-Do-_______-Act cycle.",
+                        correct: ["Check", "check", "CHECK"]
+                    }
+                ]
+            },
+            10: {
+                title: "Week 10: Comprehensive Review",
+                subtitle: "Final assessment covering all topics",
+                questions: [
+                    {
+                        id: 1,
+                        type: "single",
+                        question: "The hierarchy of controls lists elimination as the MOST effective because:",
+                        options: [
+                            "It's the cheapest option",
+                            "It completely removes the hazard",
+                            "It requires no training",
+                            "It's legally required first"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        id: 2,
+                        type: "multiple",
+                        question: "Who has responsibilities in workplace risk management? (Select all that apply)",
+                        options: [
+                            "Employers",
+                            "Employees",
+                            "Only external consultants",
+                            "Contractors and visitors"
+                        ],
+                        correct: [0, 1, 3]
+                    },
+                    {
+                        id: 3,
+                        type: "truefalse",
+                        question: "Risk assessments should consider both physical and psychological hazards.",
+                        correct: true
+                    },
+                    {
+                        id: 4,
+                        type: "single",
+                        question: "PPE stands for:",
+                        options: [
+                            "Primary Prevention Equipment",
+                            "Personal Protective Equipment",
+                            "Professional Protection Essentials",
+                            "Protective Personnel Evaluation"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        id: 5,
+                        type: "fillblank",
+                        question: "Risk = Likelihood × _______",
+                        correct: ["Severity", "severity", "SEVERITY", "consequence", "Consequence"]
+                    }
+                ]
+            }
         };
 
         // =============================================
-        // STORAGE FUNCTIONS (localStorage based)
+        // FIREBASE INITIALIZATION
         // =============================================
-        const STORAGE_KEY = 'risk_quiz_responses';
+        const isFirebaseConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY";
+        let db = null;
 
-        function getResponses() {
-            const data = localStorage.getItem(STORAGE_KEY);
-            return data ? JSON.parse(data) : [];
-        }
-
-        function saveResponse(response) {
-            const responses = getResponses();
-            responses.push({
-                ...response,
-                timestamp: new Date().toISOString()
-            });
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(responses));
-        }
-
-        function clearResponses() {
-            localStorage.removeItem(STORAGE_KEY);
+        if (isFirebaseConfigured) {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+                
+                db.ref('.info/connected').on('value', (snap) => {
+                    const statusEl = document.getElementById('connection-status');
+                    if (snap.val() === true) {
+                        statusEl.className = 'connection-status connected';
+                        statusEl.innerHTML = '🟢 Live';
+                    } else {
+                        statusEl.className = 'connection-status disconnected';
+                        statusEl.innerHTML = '🔴 Offline';
+                    }
+                });
+            } catch (e) {
+                console.error('Firebase init error:', e);
+            }
         }
 
         // =============================================
         // APP STATE
         // =============================================
         let state = {
-            view: 'quiz', // 'quiz', 'dashboard', 'qrcodes'
-            currentQuestion: 1,
+            view: 'quiz',
+            currentWeek: 1,
+            currentQuestion: null,
             studentName: localStorage.getItem('quiz_student_name') || '',
             selectedAnswers: {},
             submitted: {},
-            baseUrl: window.location.origin + window.location.pathname
+            responses: [],
+            baseUrl: window.location.origin + window.location.pathname,
+            isTeacher: false,
+            isAuthenticated: sessionStorage.getItem('teacher_auth') === 'true',
+            passwordError: false
         };
 
-        // Parse URL parameters
+        // Parse URL
         function parseUrlParams() {
             const params = new URLSearchParams(window.location.search);
+            const week = parseInt(params.get('week')) || 1;
             const q = params.get('q');
             const view = params.get('view');
 
+            state.currentWeek = Math.min(Math.max(week, 1), 10);
+
             if (view === 'dashboard') {
                 state.view = 'dashboard';
+                state.isTeacher = true;
             } else if (view === 'qr') {
                 state.view = 'qrcodes';
+                state.isTeacher = true;
             } else if (q) {
                 const qNum = parseInt(q);
-                if (qNum >= 1 && qNum <= quizData.questions.length) {
+                const weekData = allQuizData[state.currentWeek];
+                if (weekData && qNum >= 1 && qNum <= weekData.questions.length) {
                     state.currentQuestion = qNum;
+                    state.view = 'quiz';
+                    state.isTeacher = false;
                 }
+            } else {
+                state.view = 'landing';
             }
         }
 
         parseUrlParams();
 
         // =============================================
+        // FIREBASE FUNCTIONS
+        // =============================================
+        function getResponsesRef(week) {
+            return db ? db.ref(`quiz_responses/week_${week}`) : null;
+        }
+
+        function saveResponse(response) {
+            if (!isFirebaseConfigured || !db) {
+                alert('Quiz is in demo mode. Configure Firebase to save responses.');
+                return;
+            }
+            const ref = getResponsesRef(state.currentWeek);
+            if (ref) {
+                ref.push().set({
+                    ...response,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            }
+        }
+
+        function listenToResponses() {
+            if (!isFirebaseConfigured || !db) return;
+            const ref = getResponsesRef(state.currentWeek);
+            if (ref) {
+                ref.off(); // Remove previous listeners
+                ref.orderByChild('timestamp').on('value', (snapshot) => {
+                    const responses = [];
+                    snapshot.forEach((child) => {
+                        responses.push({ id: child.key, ...child.val() });
+                    });
+                    state.responses = responses;
+                    if (state.view === 'dashboard') render();
+                });
+            }
+        }
+
+        function clearWeekResponses() {
+            if (!isFirebaseConfigured || !db) return;
+            const ref = getResponsesRef(state.currentWeek);
+            if (ref) ref.remove();
+        }
+
+        // =============================================
         // RENDER FUNCTIONS
         // =============================================
         function render() {
             const app = document.getElementById('app');
+            const statusEl = document.getElementById('connection-status');
 
-            if (state.view === 'dashboard') {
+            // Handle teacher authentication
+            if (state.isTeacher && !state.isAuthenticated) {
+                app.innerHTML = renderPasswordPrompt();
+                statusEl.style.display = 'none';
+                attachEventListeners();
+                return;
+            }
+
+            statusEl.style.display = (state.view === 'dashboard' || state.view === 'quiz') ? 'block' : 'none';
+
+            if (!isFirebaseConfigured && state.isTeacher) {
+                app.innerHTML = renderSetupInstructions();
+            } else if (state.view === 'dashboard') {
+                listenToResponses();
                 app.innerHTML = renderDashboard();
             } else if (state.view === 'qrcodes') {
                 app.innerHTML = renderQRCodes();
-                generateQRCodes();
-            } else {
+                setTimeout(generateQRCodes, 100);
+            } else if (state.view === 'landing') {
+                app.innerHTML = renderLanding();
+            } else if (state.view === 'quiz') {
                 if (!state.studentName) {
                     app.innerHTML = renderNameInput();
                 } else {
@@ -761,89 +1481,152 @@
             attachEventListeners();
         }
 
+        function renderPasswordPrompt() {
+            return `
+                <div class="overlay">
+                    <div class="overlay-card">
+                        <h2>🔐 Teacher Access</h2>
+                        <p>Enter the teacher password to continue</p>
+                        ${state.passwordError ? '<p class="error-msg">Incorrect password. Try again.</p>' : ''}
+                        <input type="password" id="passwordInput" placeholder="Password" autofocus>
+                        <button class="submit-btn" id="passwordSubmitBtn">Enter</button>
+                        <p style="margin-top: 20px; font-size: 0.8rem; color: var(--text-muted);">
+                            <a href="?" style="color: var(--accent-primary);">← Back to student view</a>
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
         function renderNavTabs() {
+            if (!state.isTeacher) return '';
+
             return `
                 <nav class="nav-tabs">
-                    <button class="nav-tab ${state.view === 'quiz' ? 'active' : ''}" data-view="quiz">
-                        📝 Take Quiz
-                    </button>
                     <button class="nav-tab ${state.view === 'dashboard' ? 'active' : ''}" data-view="dashboard">
-                        📊 Teacher Dashboard
+                        📊 Dashboard
                     </button>
                     <button class="nav-tab ${state.view === 'qrcodes' ? 'active' : ''}" data-view="qrcodes">
                         📱 QR Codes
                     </button>
+                    <div class="week-selector">
+                        <label>Week:</label>
+                        <select id="weekSelect">
+                            ${Object.keys(allQuizData).map(w => `
+                                <option value="${w}" ${parseInt(w) === state.currentWeek ? 'selected' : ''}>
+                                    Week ${w}
+                                </option>
+                            `).join('')}
+                        </select>
+                        <button class="logout-btn" id="logoutBtn">🚪 Logout</button>
+                    </div>
                 </nav>
             `;
         }
 
-        function renderNameInput() {
+        function renderSetupInstructions() {
             return `
                 ${renderNavTabs()}
-                <div class="name-input-overlay">
-                    <div class="name-input-card">
+                <div class="header">
+                    <h1>⚙️ Firebase Setup Required</h1>
+                    <p class="subtitle">Configure Firebase for live response tracking</p>
+                </div>
+                <div class="container">
+                    <div class="setup-card">
+                        <h2>📋 Quick Setup Guide (5 minutes)</h2>
+                        <ol>
+                            <li>Go to <a href="https://console.firebase.google.com/" target="_blank" style="color: var(--accent-primary);">Firebase Console</a></li>
+                            <li>Click <strong>"Create a project"</strong></li>
+                            <li>Once created, click the <strong>Web icon (&lt;/&gt;)</strong> to add a web app</li>
+                            <li>Copy your <code>firebaseConfig</code> object</li>
+                            <li>Go to <strong>Build → Realtime Database → Create Database</strong></li>
+                            <li>Choose <strong>"Start in test mode"</strong></li>
+                            <li>Edit this HTML file and replace the <code>firebaseConfig</code> values</li>
+                            <li>Also change the <code>TEACHER_PASSWORD</code> at the top of the script!</li>
+                        </ol>
+                        <div class="warning">
+                            ⚠️ Default password is "teacher123" - change it before deploying!
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderLanding() {
+            return `
+                <div class="header">
+                    <h1>Risk Assessment Quiz</h1>
+                    <p class="subtitle">Workplace Safety Training</p>
+                </div>
+                <div class="container">
+                    <div class="question-card" style="text-align: center;">
+                        <div class="empty-state-icon">📱</div>
+                        <h2 style="margin-bottom: 16px;">Scan a QR Code to Begin</h2>
+                        <p style="color: var(--text-secondary); margin-bottom: 24px;">
+                            Each question has its own QR code. Scan the code shown on the presentation slide to answer that specific question.
+                        </p>
+                        <div style="border-top: 1px solid var(--border-color); padding-top: 24px; margin-top: 24px;">
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">
+                                Are you a teacher? 
+                                <a href="?view=dashboard" style="color: var(--accent-primary);">Open Dashboard</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderNameInput() {
+            const weekData = allQuizData[state.currentWeek];
+            const question = weekData?.questions.find(q => q.id === state.currentQuestion);
+            
+            return `
+                <div class="overlay">
+                    <div class="overlay-card">
+                        <div class="week-badge">Week ${state.currentWeek}</div>
                         <h2>Welcome! 👋</h2>
-                        <p>Please enter your name to begin the quiz</p>
-                        <input type="text" id="studentNameInput" placeholder="Your name" autofocus>
-                        <button class="submit-btn" id="startQuizBtn">Start Quiz</button>
+                        <p>Question ${state.currentQuestion}: ${question ? question.question.substring(0, 50) + '...' : ''}</p>
+                        <input type="text" id="studentNameInput" placeholder="Enter your name" autofocus>
+                        <button class="submit-btn" id="startQuizBtn">Continue</button>
                     </div>
                 </div>
             `;
         }
 
         function renderQuiz() {
-            const question = quizData.questions.find(q => q.id === state.currentQuestion);
+            const weekData = allQuizData[state.currentWeek];
+            const question = weekData?.questions.find(q => q.id === state.currentQuestion);
+            
             if (!question) {
                 return `
-                    ${renderNavTabs()}
                     <div class="header">
-                        <h1>${quizData.title}</h1>
-                        <p class="subtitle">${quizData.subtitle}</p>
+                        <div class="week-badge">Week ${state.currentWeek}</div>
+                        <h1>${weekData?.title || 'Quiz'}</h1>
                     </div>
                     <div class="container">
                         <div class="empty-state">
                             <div class="empty-state-icon">❓</div>
-                            <p>Question not found. Please select a valid question.</p>
+                            <p>Invalid question. Please scan a valid QR code.</p>
                         </div>
-                        ${renderQuestionNav()}
                     </div>
                 `;
             }
 
             return `
-                ${renderNavTabs()}
                 <div class="header">
-                    <h1>${quizData.title}</h1>
-                    <p class="subtitle">Welcome, ${state.studentName}!</p>
+                    <div class="week-badge">Week ${state.currentWeek}</div>
+                    <h1>${weekData.title}</h1>
+                    <p class="subtitle">Answering as: <strong>${state.studentName}</strong></p>
                 </div>
                 <div class="container">
                     ${renderQuestion(question)}
-                    ${renderQuestionNav()}
-                </div>
-            `;
-        }
-
-        function renderQuestionNav() {
-            return `
-                <div class="question-card" style="padding: 16px;">
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
-                        ${quizData.questions.map(q => `
-                            <button 
-                                class="nav-tab ${state.currentQuestion === q.id ? 'active' : ''} ${state.submitted[q.id] ? 'submitted' : ''}"
-                                data-question="${q.id}"
-                                style="${state.submitted[q.id] ? 'opacity: 0.6;' : ''}"
-                            >
-                                Q${q.id}
-                            </button>
-                        `).join('')}
-                    </div>
                 </div>
             `;
         }
 
         function renderQuestion(question) {
-            const isSubmitted = state.submitted[question.id];
-            const feedback = state.submitted[question.id];
+            const key = `${state.currentWeek}-${question.id}`;
+            const isSubmitted = state.submitted[key];
 
             let typeLabel = '';
             switch(question.type) {
@@ -857,23 +1640,15 @@
 
             if (question.type === 'single' || question.type === 'multiple') {
                 const isMultiple = question.type === 'multiple';
-                const selected = state.selectedAnswers[question.id] || (isMultiple ? [] : null);
+                const selected = state.selectedAnswers[key] || (isMultiple ? [] : null);
 
                 optionsHtml = `
                     <div class="options-list">
                         ${question.options.map((opt, idx) => {
-                            let isSelected = isMultiple 
-                                ? selected.includes(idx) 
-                                : selected === idx;
+                            let isSelected = isMultiple ? selected.includes(idx) : selected === idx;
                             let classes = 'option-item';
                             if (isSelected) classes += ' selected';
-                            if (isSubmitted) {
-                                const isCorrect = isMultiple 
-                                    ? question.correct.includes(idx) 
-                                    : question.correct === idx;
-                                if (isCorrect) classes += ' correct';
-                                else if (isSelected) classes += ' wrong';
-                            }
+                            if (isSubmitted) classes += ' disabled';
                             return `
                                 <div class="${classes}" data-option="${idx}" ${isSubmitted ? '' : 'data-clickable'}>
                                     <div class="${isMultiple ? 'option-checkbox' : 'option-radio'}"></div>
@@ -884,17 +1659,14 @@
                     </div>
                 `;
             } else if (question.type === 'truefalse') {
-                const selected = state.selectedAnswers[question.id];
+                const selected = state.selectedAnswers[key];
                 optionsHtml = `
                     <div class="options-list">
                         ${[true, false].map(val => {
                             let isSelected = selected === val;
                             let classes = 'option-item';
                             if (isSelected) classes += ' selected';
-                            if (isSubmitted) {
-                                if (val === question.correct) classes += ' correct';
-                                else if (isSelected) classes += ' wrong';
-                            }
+                            if (isSubmitted) classes += ' disabled';
                             return `
                                 <div class="${classes}" data-tf="${val}" ${isSubmitted ? '' : 'data-clickable'}>
                                     <div class="option-radio"></div>
@@ -905,7 +1677,7 @@
                     </div>
                 `;
             } else if (question.type === 'fillblank') {
-                const value = state.selectedAnswers[question.id] || '';
+                const value = state.selectedAnswers[key] || '';
                 optionsHtml = `
                     <input 
                         type="text" 
@@ -918,67 +1690,68 @@
                 `;
             }
 
-            let feedbackHtml = '';
-            if (isSubmitted) {
-                feedbackHtml = `
-                    <div class="feedback ${feedback.correct ? 'correct' : 'wrong'}">
-                        ${feedback.correct ? '✓ Correct!' : '✗ Incorrect'}
-                        ${question.type === 'fillblank' && !feedback.correct 
-                            ? `<br><small>Correct answer: ${question.correct[0]}</small>` 
-                            : ''}
-                    </div>
-                `;
-            }
+            const hasAnswer = state.selectedAnswers[key] !== undefined && 
+                              state.selectedAnswers[key] !== null &&
+                              state.selectedAnswers[key] !== '' &&
+                              (Array.isArray(state.selectedAnswers[key]) ? state.selectedAnswers[key].length > 0 : true);
 
             return `
                 <div class="question-card">
                     <div class="question-badge">
-                        Question ${question.id} of ${quizData.questions.length}
+                        Question ${question.id} of ${allQuizData[state.currentWeek].questions.length}
                         <span class="question-type">${typeLabel}</span>
                     </div>
                     <div class="question-text">${question.question}</div>
                     ${optionsHtml}
                     ${!isSubmitted ? `
-                        <button class="submit-btn" id="submitAnswerBtn" ${!state.selectedAnswers[question.id] && state.selectedAnswers[question.id] !== false ? 'disabled' : ''}>
+                        <button class="submit-btn" id="submitAnswerBtn" ${!hasAnswer ? 'disabled' : ''}>
                             Submit Answer
                         </button>
-                    ` : feedbackHtml}
+                    ` : `
+                        <div class="feedback submitted">
+                            ✓ Your answer has been submitted!
+                        </div>
+                    `}
                 </div>
             `;
         }
 
         function renderDashboard() {
-            const responses = getResponses();
+            const weekData = allQuizData[state.currentWeek];
+            const responses = state.responses;
             
-            // Calculate stats
             const totalResponses = responses.length;
             const correctResponses = responses.filter(r => r.correct).length;
             const accuracy = totalResponses > 0 ? Math.round((correctResponses / totalResponses) * 100) : 0;
-            const uniqueStudents = new Set(responses.map(r => r.studentName)).size;
+            const uniqueStudents = [...new Set(responses.map(r => r.studentName))];
 
-            // Group by question
             const byQuestion = {};
             responses.forEach(r => {
-                if (!byQuestion[r.questionId]) {
-                    byQuestion[r.questionId] = { correct: 0, wrong: 0 };
-                }
+                if (!byQuestion[r.questionId]) byQuestion[r.questionId] = { correct: 0, wrong: 0 };
                 if (r.correct) byQuestion[r.questionId].correct++;
                 else byQuestion[r.questionId].wrong++;
             });
 
+            const studentMatrix = {};
+            uniqueStudents.forEach(name => { studentMatrix[name] = {}; });
+            responses.forEach(r => { studentMatrix[r.studentName][r.questionId] = r.correct; });
+
             return `
                 ${renderNavTabs()}
                 <div class="header">
+                    <div class="week-badge">Week ${state.currentWeek}</div>
                     <h1>📊 Teacher Dashboard</h1>
-                    <p class="subtitle">Live response monitoring</p>
+                    <p class="subtitle">
+                        ${weekData.title}
+                        <span class="live-indicator" style="margin-left: 12px;">
+                            <span class="live-dot"></span> Live
+                        </span>
+                    </p>
                 </div>
                 <div class="dashboard container">
                     <div class="dashboard-header">
                         <h2>Response Statistics</h2>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="refresh-btn" id="refreshBtn">🔄 Refresh</button>
-                            <button class="clear-btn" id="clearBtn">🗑️ Clear All</button>
-                        </div>
+                        <button class="clear-btn" id="clearBtn">🗑️ Clear Week ${state.currentWeek}</button>
                     </div>
                     
                     <div class="stats-grid">
@@ -987,28 +1760,64 @@
                             <div class="stat-label">Total Responses</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-value">${uniqueStudents}</div>
-                            <div class="stat-label">Unique Students</div>
+                            <div class="stat-value">${uniqueStudents.length}</div>
+                            <div class="stat-label">Students</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-value">${accuracy}%</div>
-                            <div class="stat-label">Accuracy Rate</div>
+                            <div class="stat-label">Accuracy</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-value">${correctResponses}</div>
-                            <div class="stat-label">Correct Answers</div>
+                            <div class="stat-label">Correct</div>
                         </div>
                     </div>
 
+                    ${uniqueStudents.length > 0 ? `
+                        <h3 style="margin-bottom: 16px;">📋 Student Results</h3>
+                        <div style="overflow-x: auto; margin-bottom: 32px;">
+                            <table class="student-summary-table">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        ${weekData.questions.map(q => `<th>Q${q.id}</th>`).join('')}
+                                        <th>Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${uniqueStudents.map(name => {
+                                        const answers = studentMatrix[name];
+                                        let correct = 0, answered = 0;
+                                        return `
+                                            <tr>
+                                                <td>${name}</td>
+                                                ${weekData.questions.map(q => {
+                                                    if (answers[q.id] !== undefined) {
+                                                        answered++;
+                                                        if (answers[q.id]) correct++;
+                                                        return `<td class="${answers[q.id] ? 'cell-correct' : 'cell-wrong'}">${answers[q.id] ? '✓' : '✗'}</td>`;
+                                                    }
+                                                    return `<td class="cell-pending">—</td>`;
+                                                }).join('')}
+                                                <td><strong>${correct}/${answered}</strong></td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : ''}
+
                     <h3 style="margin-bottom: 16px;">Question Performance</h3>
                     <div class="stats-grid" style="margin-bottom: 32px;">
-                        ${quizData.questions.map(q => {
+                        ${weekData.questions.map(q => {
                             const stats = byQuestion[q.id] || { correct: 0, wrong: 0 };
                             const total = stats.correct + stats.wrong;
                             const pct = total > 0 ? Math.round((stats.correct / total) * 100) : 0;
+                            const color = pct >= 70 ? 'var(--accent-correct)' : pct >= 40 ? '#ffc107' : 'var(--accent-wrong)';
                             return `
                                 <div class="stat-card">
-                                    <div class="stat-value" style="font-size: 1.5rem;">${pct}%</div>
+                                    <div class="stat-value" style="font-size: 1.5rem; color: ${color};">${pct}%</div>
                                     <div class="stat-label">Q${q.id}: ${total} responses</div>
                                 </div>
                             `;
@@ -1023,25 +1832,25 @@
                                     <tr>
                                         <th>Time</th>
                                         <th>Student</th>
-                                        <th>Question</th>
+                                        <th>Q#</th>
                                         <th>Answer</th>
                                         <th>Result</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${responses.slice().reverse().slice(0, 50).map(r => `
+                                    ${responses.slice().reverse().slice(0, 30).map(r => `
                                         <tr>
-                                            <td style="font-family: 'Space Mono', monospace; font-size: 0.8rem;">
-                                                ${new Date(r.timestamp).toLocaleTimeString()}
+                                            <td style="font-family: 'Space Mono', monospace; font-size: 0.75rem;">
+                                                ${r.timestamp ? new Date(r.timestamp).toLocaleTimeString() : 'N/A'}
                                             </td>
                                             <td>${r.studentName}</td>
                                             <td>Q${r.questionId}</td>
-                                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                                 ${formatAnswer(r.answer)}
                                             </td>
                                             <td>
                                                 <span class="status-badge ${r.correct ? 'correct' : 'wrong'}">
-                                                    ${r.correct ? '✓ Correct' : '✗ Wrong'}
+                                                    ${r.correct ? '✓' : '✗'}
                                                 </span>
                                             </td>
                                         </tr>
@@ -1052,7 +1861,7 @@
                     ` : `
                         <div class="empty-state">
                             <div class="empty-state-icon">📭</div>
-                            <p>No responses yet. Students can start answering questions!</p>
+                            <p>No responses yet for Week ${state.currentWeek}. Share the QR codes with students!</p>
                         </div>
                     `}
                 </div>
@@ -1060,21 +1869,21 @@
         }
 
         function formatAnswer(answer) {
-            if (Array.isArray(answer)) {
-                return answer.join(', ');
-            }
-            if (typeof answer === 'boolean') {
-                return answer ? 'True' : 'False';
-            }
+            if (Array.isArray(answer)) return answer.map(a => String.fromCharCode(65 + a)).join(', ');
+            if (typeof answer === 'boolean') return answer ? 'True' : 'False';
+            if (typeof answer === 'number') return String.fromCharCode(65 + answer);
             return answer;
         }
 
         function renderQRCodes() {
+            const weekData = allQuizData[state.currentWeek];
+
             return `
                 ${renderNavTabs()}
                 <div class="header">
+                    <div class="week-badge">Week ${state.currentWeek}</div>
                     <h1>📱 QR Code Generator</h1>
-                    <p class="subtitle">Generate QR codes for each question</p>
+                    <p class="subtitle">${weekData.title}</p>
                 </div>
                 <div class="qr-generator container">
                     <div class="url-input-section">
@@ -1083,31 +1892,21 @@
                         <button class="submit-btn" style="margin-top: 16px;" id="regenerateQRBtn">
                             Generate QR Codes
                         </button>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 12px;">
+                            💡 Each QR links to one question. Students cannot navigate between questions.
+                        </p>
                     </div>
 
                     <div class="qr-grid" id="qrGrid">
-                        ${quizData.questions.map(q => `
+                        ${weekData.questions.map(q => `
                             <div class="qr-card">
-                                <h3>Question ${q.id}</h3>
+                                <h3>Week ${state.currentWeek} - Q${q.id}</h3>
+                                <p class="question-preview">${q.question.substring(0, 50)}${q.question.length > 50 ? '...' : ''}</p>
                                 <div class="qr-code-container" id="qr-${q.id}"></div>
                                 <div class="qr-url" id="url-${q.id}"></div>
-                                <button class="download-btn" data-qr="${q.id}">Download PNG</button>
+                                <button class="download-btn" data-qr="${q.id}">⬇️ Download</button>
                             </div>
                         `).join('')}
-                        
-                        <div class="qr-card">
-                            <h3>🎯 All Questions</h3>
-                            <div class="qr-code-container" id="qr-all"></div>
-                            <div class="qr-url" id="url-all"></div>
-                            <button class="download-btn" data-qr="all">Download PNG</button>
-                        </div>
-
-                        <div class="qr-card">
-                            <h3>📊 Dashboard</h3>
-                            <div class="qr-code-container" id="qr-dashboard"></div>
-                            <div class="qr-url" id="url-dashboard"></div>
-                            <button class="download-btn" data-qr="dashboard">Download PNG</button>
-                        </div>
                     </div>
                 </div>
             `;
@@ -1115,145 +1914,135 @@
 
         function generateQRCodes() {
             const baseUrl = document.getElementById('baseUrlInput')?.value || state.baseUrl;
-            
-            // Clear existing QR codes
-            document.querySelectorAll('.qr-code-container').forEach(el => {
-                el.innerHTML = '';
-            });
+            const weekData = allQuizData[state.currentWeek];
 
-            // Generate QR for each question
-            quizData.questions.forEach(q => {
-                const url = `${baseUrl}?q=${q.id}`;
+            document.querySelectorAll('.qr-code-container').forEach(el => el.innerHTML = '');
+
+            weekData.questions.forEach(q => {
+                const url = `${baseUrl}?week=${state.currentWeek}&q=${q.id}`;
                 const container = document.getElementById(`qr-${q.id}`);
                 const urlDisplay = document.getElementById(`url-${q.id}`);
                 
                 if (container) {
                     new QRCode(container, {
                         text: url,
-                        width: 128,
-                        height: 128,
+                        width: 120,
+                        height: 120,
                         colorDark: "#000000",
                         colorLight: "#ffffff",
                         correctLevel: QRCode.CorrectLevel.H
                     });
                 }
-                if (urlDisplay) {
-                    urlDisplay.textContent = url;
-                }
+                if (urlDisplay) urlDisplay.textContent = url;
             });
-
-            // Generate QR for all questions (main quiz)
-            const allUrl = baseUrl;
-            const allContainer = document.getElementById('qr-all');
-            const allUrlDisplay = document.getElementById('url-all');
-            if (allContainer) {
-                new QRCode(allContainer, {
-                    text: allUrl,
-                    width: 128,
-                    height: 128,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-            }
-            if (allUrlDisplay) {
-                allUrlDisplay.textContent = allUrl;
-            }
-
-            // Generate QR for dashboard
-            const dashUrl = `${baseUrl}?view=dashboard`;
-            const dashContainer = document.getElementById('qr-dashboard');
-            const dashUrlDisplay = document.getElementById('url-dashboard');
-            if (dashContainer) {
-                new QRCode(dashContainer, {
-                    text: dashUrl,
-                    width: 128,
-                    height: 128,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-            }
-            if (dashUrlDisplay) {
-                dashUrlDisplay.textContent = dashUrl;
-            }
         }
 
         // =============================================
         // EVENT HANDLERS
         // =============================================
         function attachEventListeners() {
-            // Navigation tabs
+            // Password submit
+            const passwordBtn = document.getElementById('passwordSubmitBtn');
+            const passwordInput = document.getElementById('passwordInput');
+            if (passwordBtn && passwordInput) {
+                const submitPassword = () => {
+                    if (passwordInput.value === TEACHER_PASSWORD) {
+                        state.isAuthenticated = true;
+                        state.passwordError = false;
+                        sessionStorage.setItem('teacher_auth', 'true');
+                        render();
+                    } else {
+                        state.passwordError = true;
+                        render();
+                    }
+                };
+                passwordBtn.addEventListener('click', submitPassword);
+                passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') submitPassword(); });
+            }
+
+            // Logout
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    state.isAuthenticated = false;
+                    sessionStorage.removeItem('teacher_auth');
+                    window.location.href = '?';
+                });
+            }
+
+            // Week selector
+            const weekSelect = document.getElementById('weekSelect');
+            if (weekSelect) {
+                weekSelect.addEventListener('change', (e) => {
+                    state.currentWeek = parseInt(e.target.value);
+                    state.responses = [];
+                    const viewParam = state.view === 'qrcodes' ? 'qr' : state.view;
+                    history.pushState({}, '', `?view=${viewParam}&week=${state.currentWeek}`);
+                    render();
+                });
+            }
+
+            // Nav tabs
             document.querySelectorAll('.nav-tab[data-view]').forEach(tab => {
                 tab.addEventListener('click', () => {
                     state.view = tab.dataset.view;
-                    history.pushState({}, '', state.view === 'quiz' ? '?' : `?view=${state.view === 'qrcodes' ? 'qr' : state.view}`);
+                    const viewParam = state.view === 'qrcodes' ? 'qr' : state.view;
+                    history.pushState({}, '', `?view=${viewParam}&week=${state.currentWeek}`);
                     render();
                 });
             });
 
-            // Question navigation
-            document.querySelectorAll('.nav-tab[data-question]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    state.currentQuestion = parseInt(btn.dataset.question);
-                    history.pushState({}, '', `?q=${state.currentQuestion}`);
-                    render();
-                });
-            });
-
-            // Name input
+            // Student name
             const startBtn = document.getElementById('startQuizBtn');
             const nameInput = document.getElementById('studentNameInput');
             if (startBtn && nameInput) {
-                startBtn.addEventListener('click', () => {
+                const submitName = () => {
                     const name = nameInput.value.trim();
                     if (name) {
                         state.studentName = name;
                         localStorage.setItem('quiz_student_name', name);
                         render();
                     }
-                });
-                nameInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        startBtn.click();
-                    }
-                });
+                };
+                startBtn.addEventListener('click', submitName);
+                nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') submitName(); });
             }
 
-            // Option selection (single choice)
+            // Options
             document.querySelectorAll('.option-item[data-clickable][data-option]').forEach(opt => {
                 opt.addEventListener('click', () => {
-                    const question = quizData.questions.find(q => q.id === state.currentQuestion);
+                    const weekData = allQuizData[state.currentWeek];
+                    const question = weekData.questions.find(q => q.id === state.currentQuestion);
+                    const key = `${state.currentWeek}-${state.currentQuestion}`;
                     const optIndex = parseInt(opt.dataset.option);
                     
                     if (question.type === 'multiple') {
-                        const current = state.selectedAnswers[state.currentQuestion] || [];
-                        if (current.includes(optIndex)) {
-                            state.selectedAnswers[state.currentQuestion] = current.filter(i => i !== optIndex);
-                        } else {
-                            state.selectedAnswers[state.currentQuestion] = [...current, optIndex];
-                        }
+                        const current = state.selectedAnswers[key] || [];
+                        state.selectedAnswers[key] = current.includes(optIndex) 
+                            ? current.filter(i => i !== optIndex) 
+                            : [...current, optIndex];
                     } else {
-                        state.selectedAnswers[state.currentQuestion] = optIndex;
+                        state.selectedAnswers[key] = optIndex;
                     }
                     render();
                 });
             });
 
-            // True/False selection
             document.querySelectorAll('.option-item[data-clickable][data-tf]').forEach(opt => {
                 opt.addEventListener('click', () => {
-                    state.selectedAnswers[state.currentQuestion] = opt.dataset.tf === 'true';
+                    const key = `${state.currentWeek}-${state.currentQuestion}`;
+                    state.selectedAnswers[key] = opt.dataset.tf === 'true';
                     render();
                 });
             });
 
-            // Fill in blank input
             const fillInput = document.getElementById('fillBlankInput');
             if (fillInput) {
                 fillInput.addEventListener('input', (e) => {
-                    state.selectedAnswers[state.currentQuestion] = e.target.value;
-                    document.getElementById('submitAnswerBtn').disabled = !e.target.value.trim();
+                    const key = `${state.currentWeek}-${state.currentQuestion}`;
+                    state.selectedAnswers[key] = e.target.value;
+                    const btn = document.getElementById('submitAnswerBtn');
+                    if (btn) btn.disabled = !e.target.value.trim();
                 });
             }
 
@@ -1261,8 +2050,10 @@
             const submitBtn = document.getElementById('submitAnswerBtn');
             if (submitBtn) {
                 submitBtn.addEventListener('click', () => {
-                    const question = quizData.questions.find(q => q.id === state.currentQuestion);
-                    const answer = state.selectedAnswers[state.currentQuestion];
+                    const weekData = allQuizData[state.currentWeek];
+                    const question = weekData.questions.find(q => q.id === state.currentQuestion);
+                    const key = `${state.currentWeek}-${state.currentQuestion}`;
+                    const answer = state.selectedAnswers[key];
                     let isCorrect = false;
 
                     switch(question.type) {
@@ -1278,43 +2069,32 @@
                             isCorrect = answer === question.correct;
                             break;
                         case 'fillblank':
-                            const userAnswer = answer.trim().toLowerCase();
-                            isCorrect = question.correct.some(c => c.toLowerCase() === userAnswer);
+                            isCorrect = question.correct.some(c => c.toLowerCase() === answer.trim().toLowerCase());
                             break;
                     }
 
-                    state.submitted[state.currentQuestion] = { correct: isCorrect };
-
-                    // Save response
+                    state.submitted[key] = true;
                     saveResponse({
                         studentName: state.studentName,
                         questionId: state.currentQuestion,
                         answer: answer,
                         correct: isCorrect
                     });
-
                     render();
                 });
             }
 
-            // Dashboard refresh
-            const refreshBtn = document.getElementById('refreshBtn');
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', render);
-            }
-
-            // Dashboard clear
+            // Clear responses
             const clearBtn = document.getElementById('clearBtn');
             if (clearBtn) {
                 clearBtn.addEventListener('click', () => {
-                    if (confirm('Are you sure you want to clear all responses?')) {
-                        clearResponses();
-                        render();
+                    if (confirm(`Clear ALL responses for Week ${state.currentWeek}? This cannot be undone.`)) {
+                        clearWeekResponses();
                     }
                 });
             }
 
-            // Regenerate QR codes
+            // QR generation
             const regenBtn = document.getElementById('regenerateQRBtn');
             if (regenBtn) {
                 regenBtn.addEventListener('click', () => {
@@ -1323,15 +2103,14 @@
                 });
             }
 
-            // Download QR codes
+            // Download QR
             document.querySelectorAll('.download-btn[data-qr]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const qrId = btn.dataset.qr;
-                    const container = document.getElementById(`qr-${qrId}`);
-                    const canvas = container?.querySelector('canvas');
+                    const canvas = document.getElementById(`qr-${qrId}`)?.querySelector('canvas');
                     if (canvas) {
                         const link = document.createElement('a');
-                        link.download = `qr-question-${qrId}.png`;
+                        link.download = `week${state.currentWeek}-q${qrId}.png`;
                         link.href = canvas.toDataURL('image/png');
                         link.click();
                     }
@@ -1339,17 +2118,9 @@
             });
         }
 
-        // =============================================
-        // INITIALIZE
-        // =============================================
+        // Initialize
         render();
-
-        // Auto-refresh dashboard every 5 seconds
-        setInterval(() => {
-            if (state.view === 'dashboard') {
-                render();
-            }
-        }, 5000);
+        window.addEventListener('popstate', () => { parseUrlParams(); render(); });
     </script>
 </body>
 </html>
