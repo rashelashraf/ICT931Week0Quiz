@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risk Assessment Quiz</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0f1419;
+            --bg-card: #1a1f26;
+            --bg-input: #252b33;
+            --accent-primary: #00d9a5;
+            --accent-secondary: #00b386;
+            --accent-warning: #ff6b6b;
+            --accent-correct: #00d9a5;
+            --accent-wrong: #ff6b6b;
+            --text-primary: #ffffff;
+            --text-secondary: #8899a6;
+            --text-muted: #5c6d7e;
+            --border-color: #2f3842;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, var(--bg-card) 0%, #1e252d 100%);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--accent-primary), #00ffcc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header .subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .question-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .question-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-input);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+            margin-bottom: 16px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .question-type {
+            background: var(--accent-primary);
+            color: var(--bg-dark);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: var(--bg-input);
+            padding: 16px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .option-item:hover {
+            background: #2a323c;
+            border-color: var(--accent-primary);
+        }
+
+        .option-item.selected {
+            background: rgba(0, 217, 165, 0.1);
+            border-color: var(--accent-primary);
+        }
+
+        .option-item.correct {
+            background: rgba(0, 217, 165, 0.15);
+            border-color: var(--accent-correct);
+        }
+
+        .option-item.wrong {
+            background: rgba(255, 107, 107, 0.15);
+            border-color: var(--accent-wrong);
+        }
+
+        .option-radio, .option-checkbox {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .option-checkbox {
+            border-radius: 6px;
+        }
+
+        .option-item.selected .option-radio,
+        .option-item.selected .option-checkbox {
+            border-color: var(--accent-primary);
+            background: var(--accent-primary);
+        }
+
+        .option-item.selected .option-radio::after,
+        .option-item.selected .option-checkbox::after {
+            content: '✓';
+            color: var(--bg-dark);
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .option-text {
+            flex: 1;
+            font-size: 1rem;
+        }
+
+        .fill-blank-input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 20px;
+            font-size: 1rem;
+            color: var(--text-primary);
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s ease;
+        }
+
+        .fill-blank-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 4px rgba(0, 217, 165, 0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-dark);
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: all 0.3s ease;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 217, 165, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .feedback.correct {
+            background: rgba(0, 217, 165, 0.15);
+            color: var(--accent-correct);
+            border: 1px solid var(--accent-correct);
+        }
+
+        .feedback.wrong {
+            background: rgba(255, 107, 107, 0.15);
+            color: var(--accent-wrong);
+            border: 1px solid var(--accent-wrong);
+        }
+
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .nav-tab {
+            padding: 10px 20px;
+            background: var(--bg-input);
+            border: none;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .nav-tab:hover {
+            background: #2a323c;
+            color: var(--text-primary);
+        }
+
+        .nav-tab.active {
+            background: var(--accent-primary);
+            color: var(--bg-dark);
+        }
+
+        /* Teacher Dashboard */
+        .dashboard {
+            padding: 20px;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        .responses-table {
+            width: 100%;
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .responses-table th,
+        .responses-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .responses-table th {
+            background: var(--bg-input);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .responses-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-badge.correct {
+            background: rgba(0, 217, 165, 0.2);
+            color: var(--accent-correct);
+        }
+
+        .status-badge.wrong {
+            background: rgba(255, 107, 107, 0.2);
+            color: var(--accent-wrong);
+        }
+
+        /* QR Code Generator */
+        .qr-generator {
+            padding: 20px;
+        }
+
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .qr-card {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .qr-card h3 {
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+
+        .qr-code-container {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+
+        .qr-url {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            word-break: break-all;
+        }
+
+        .url-input-section {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .url-input-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .url-input-section input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 1rem;
+            color: var(--text-primary);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .url-input-section input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .download-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s;
+        }
+
+        .download-btn:hover {
+            background: var(--accent-primary);
+            color: var(--bg-dark);
+        }
+
+        .refresh-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .refresh-btn:hover {
+            background: var(--accent-primary);
+            color: var(--bg-dark);
+        }
+
+        .clear-btn {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid var(--accent-wrong);
+            color: var(--accent-wrong);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .clear-btn:hover {
+            background: var(--accent-wrong);
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        /* Student name input */
+        .name-input-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 20, 25, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .name-input-card {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 16px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .name-input-card h2 {
+            margin-bottom: 8px;
+        }
+
+        .name-input-card p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .name-input-card input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 20px;
+            font-size: 1rem;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            text-align: center;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .name-input-card input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .question-card {
+                padding: 24px;
+            }
+
+            .question-text {
+                font-size: 1.1rem;
+            }
+
+            .nav-tabs {
+                padding: 12px;
+            }
+
+            .nav-tab {
+                padding: 8px 14px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script>
+        // =============================================
+        // QUIZ DATA - CUSTOMIZE YOUR QUESTIONS HERE
+        // =============================================
+        const quizData = {
+            title: "Risk Assessment Quiz",
+            subtitle: "Test your knowledge on workplace safety",
+            questions: [
+                {
+                    id: 1,
+                    type: "single", // MCQ with single answer
+                    question: "What is the primary purpose of a risk assessment?",
+                    options: [
+                        "To eliminate all workplace hazards completely",
+                        "To identify hazards and evaluate the risks they pose",
+                        "To create paperwork for regulatory compliance",
+                        "To assign blame when accidents occur"
+                    ],
+                    correct: 1 // Index of correct answer (0-based)
+                },
+                {
+                    id: 2,
+                    type: "single",
+                    question: "How often should risk assessments be reviewed?",
+                    options: [
+                        "Only when an accident occurs",
+                        "Once every 10 years",
+                        "Regularly and when significant changes occur",
+                        "Never, once done they are permanent"
+                    ],
+                    correct: 2
+                },
+                {
+                    id: 3,
+                    type: "multiple", // MCQ with multiple answers
+                    question: "Which of the following are key steps in the risk assessment process? (Select all that apply)",
+                    options: [
+                        "Identify hazards",
+                        "Evaluate the risks",
+                        "Ignore low-probability events",
+                        "Implement control measures",
+                        "Record and review findings"
+                    ],
+                    correct: [0, 1, 3, 4] // Indices of correct answers
+                },
+                {
+                    id: 4,
+                    type: "truefalse",
+                    question: "A hazard and a risk are the same thing.",
+                    correct: false
+                },
+                {
+                    id: 5,
+                    type: "truefalse",
+                    question: "The hierarchy of controls prioritizes elimination of hazards over use of PPE.",
+                    correct: true
+                },
+                {
+                    id: 6,
+                    type: "fillblank",
+                    question: "The formula for calculating risk is: Risk = _______ × Severity",
+                    correct: ["likelihood", "probability", "Likelihood", "Probability"],
+                    caseSensitive: false
+                },
+                {
+                    id: 7,
+                    type: "single",
+                    question: "In the hierarchy of controls, which method is considered MOST effective?",
+                    options: [
+                        "Personal Protective Equipment (PPE)",
+                        "Administrative Controls",
+                        "Engineering Controls",
+                        "Elimination"
+                    ],
+                    correct: 3
+                },
+                {
+                    id: 8,
+                    type: "multiple",
+                    question: "Who has responsibilities in workplace risk management? (Select all that apply)",
+                    options: [
+                        "Employers",
+                        "Employees",
+                        "Safety officers only",
+                        "Contractors and visitors"
+                    ],
+                    correct: [0, 1, 3]
+                },
+                {
+                    id: 9,
+                    type: "fillblank",
+                    question: "PPE stands for Personal _______ Equipment.",
+                    correct: ["Protective", "protective", "PROTECTIVE"],
+                    caseSensitive: false
+                },
+                {
+                    id: 10,
+                    type: "truefalse",
+                    question: "Risk assessments only need to consider physical hazards, not psychological ones.",
+                    correct: false
+                }
+            ]
+        };
+
+        // =============================================
+        // STORAGE FUNCTIONS (localStorage based)
+        // =============================================
+        const STORAGE_KEY = 'risk_quiz_responses';
+
+        function getResponses() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveResponse(response) {
+            const responses = getResponses();
+            responses.push({
+                ...response,
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(responses));
+        }
+
+        function clearResponses() {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+
+        // =============================================
+        // APP STATE
+        // =============================================
+        let state = {
+            view: 'quiz', // 'quiz', 'dashboard', 'qrcodes'
+            currentQuestion: 1,
+            studentName: localStorage.getItem('quiz_student_name') || '',
+            selectedAnswers: {},
+            submitted: {},
+            baseUrl: window.location.origin + window.location.pathname
+        };
+
+        // Parse URL parameters
+        function parseUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            const q = params.get('q');
+            const view = params.get('view');
+
+            if (view === 'dashboard') {
+                state.view = 'dashboard';
+            } else if (view === 'qr') {
+                state.view = 'qrcodes';
+            } else if (q) {
+                const qNum = parseInt(q);
+                if (qNum >= 1 && qNum <= quizData.questions.length) {
+                    state.currentQuestion = qNum;
+                }
+            }
+        }
+
+        parseUrlParams();
+
+        // =============================================
+        // RENDER FUNCTIONS
+        // =============================================
+        function render() {
+            const app = document.getElementById('app');
+
+            if (state.view === 'dashboard') {
+                app.innerHTML = renderDashboard();
+            } else if (state.view === 'qrcodes') {
+                app.innerHTML = renderQRCodes();
+                generateQRCodes();
+            } else {
+                if (!state.studentName) {
+                    app.innerHTML = renderNameInput();
+                } else {
+                    app.innerHTML = renderQuiz();
+                }
+            }
+
+            attachEventListeners();
+        }
+
+        function renderNavTabs() {
+            return `
+                <nav class="nav-tabs">
+                    <button class="nav-tab ${state.view === 'quiz' ? 'active' : ''}" data-view="quiz">
+                        📝 Take Quiz
+                    </button>
+                    <button class="nav-tab ${state.view === 'dashboard' ? 'active' : ''}" data-view="dashboard">
+                        📊 Teacher Dashboard
+                    </button>
+                    <button class="nav-tab ${state.view === 'qrcodes' ? 'active' : ''}" data-view="qrcodes">
+                        📱 QR Codes
+                    </button>
+                </nav>
+            `;
+        }
+
+        function renderNameInput() {
+            return `
+                ${renderNavTabs()}
+                <div class="name-input-overlay">
+                    <div class="name-input-card">
+                        <h2>Welcome! 👋</h2>
+                        <p>Please enter your name to begin the quiz</p>
+                        <input type="text" id="studentNameInput" placeholder="Your name" autofocus>
+                        <button class="submit-btn" id="startQuizBtn">Start Quiz</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderQuiz() {
+            const question = quizData.questions.find(q => q.id === state.currentQuestion);
+            if (!question) {
+                return `
+                    ${renderNavTabs()}
+                    <div class="header">
+                        <h1>${quizData.title}</h1>
+                        <p class="subtitle">${quizData.subtitle}</p>
+                    </div>
+                    <div class="container">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">❓</div>
+                            <p>Question not found. Please select a valid question.</p>
+                        </div>
+                        ${renderQuestionNav()}
+                    </div>
+                `;
+            }
+
+            return `
+                ${renderNavTabs()}
+                <div class="header">
+                    <h1>${quizData.title}</h1>
+                    <p class="subtitle">Welcome, ${state.studentName}!</p>
+                </div>
+                <div class="container">
+                    ${renderQuestion(question)}
+                    ${renderQuestionNav()}
+                </div>
+            `;
+        }
+
+        function renderQuestionNav() {
+            return `
+                <div class="question-card" style="padding: 16px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
+                        ${quizData.questions.map(q => `
+                            <button 
+                                class="nav-tab ${state.currentQuestion === q.id ? 'active' : ''} ${state.submitted[q.id] ? 'submitted' : ''}"
+                                data-question="${q.id}"
+                                style="${state.submitted[q.id] ? 'opacity: 0.6;' : ''}"
+                            >
+                                Q${q.id}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderQuestion(question) {
+            const isSubmitted = state.submitted[question.id];
+            const feedback = state.submitted[question.id];
+
+            let typeLabel = '';
+            switch(question.type) {
+                case 'single': typeLabel = 'Single Choice'; break;
+                case 'multiple': typeLabel = 'Multiple Choice'; break;
+                case 'truefalse': typeLabel = 'True/False'; break;
+                case 'fillblank': typeLabel = 'Fill in the Blank'; break;
+            }
+
+            let optionsHtml = '';
+
+            if (question.type === 'single' || question.type === 'multiple') {
+                const isMultiple = question.type === 'multiple';
+                const selected = state.selectedAnswers[question.id] || (isMultiple ? [] : null);
+
+                optionsHtml = `
+                    <div class="options-list">
+                        ${question.options.map((opt, idx) => {
+                            let isSelected = isMultiple 
+                                ? selected.includes(idx) 
+                                : selected === idx;
+                            let classes = 'option-item';
+                            if (isSelected) classes += ' selected';
+                            if (isSubmitted) {
+                                const isCorrect = isMultiple 
+                                    ? question.correct.includes(idx) 
+                                    : question.correct === idx;
+                                if (isCorrect) classes += ' correct';
+                                else if (isSelected) classes += ' wrong';
+                            }
+                            return `
+                                <div class="${classes}" data-option="${idx}" ${isSubmitted ? '' : 'data-clickable'}>
+                                    <div class="${isMultiple ? 'option-checkbox' : 'option-radio'}"></div>
+                                    <span class="option-text">${opt}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            } else if (question.type === 'truefalse') {
+                const selected = state.selectedAnswers[question.id];
+                optionsHtml = `
+                    <div class="options-list">
+                        ${[true, false].map(val => {
+                            let isSelected = selected === val;
+                            let classes = 'option-item';
+                            if (isSelected) classes += ' selected';
+                            if (isSubmitted) {
+                                if (val === question.correct) classes += ' correct';
+                                else if (isSelected) classes += ' wrong';
+                            }
+                            return `
+                                <div class="${classes}" data-tf="${val}" ${isSubmitted ? '' : 'data-clickable'}>
+                                    <div class="option-radio"></div>
+                                    <span class="option-text">${val ? 'True' : 'False'}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            } else if (question.type === 'fillblank') {
+                const value = state.selectedAnswers[question.id] || '';
+                optionsHtml = `
+                    <input 
+                        type="text" 
+                        class="fill-blank-input" 
+                        id="fillBlankInput"
+                        placeholder="Type your answer here..."
+                        value="${value}"
+                        ${isSubmitted ? 'disabled' : ''}
+                    >
+                `;
+            }
+
+            let feedbackHtml = '';
+            if (isSubmitted) {
+                feedbackHtml = `
+                    <div class="feedback ${feedback.correct ? 'correct' : 'wrong'}">
+                        ${feedback.correct ? '✓ Correct!' : '✗ Incorrect'}
+                        ${question.type === 'fillblank' && !feedback.correct 
+                            ? `<br><small>Correct answer: ${question.correct[0]}</small>` 
+                            : ''}
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="question-card">
+                    <div class="question-badge">
+                        Question ${question.id} of ${quizData.questions.length}
+                        <span class="question-type">${typeLabel}</span>
+                    </div>
+                    <div class="question-text">${question.question}</div>
+                    ${optionsHtml}
+                    ${!isSubmitted ? `
+                        <button class="submit-btn" id="submitAnswerBtn" ${!state.selectedAnswers[question.id] && state.selectedAnswers[question.id] !== false ? 'disabled' : ''}>
+                            Submit Answer
+                        </button>
+                    ` : feedbackHtml}
+                </div>
+            `;
+        }
+
+        function renderDashboard() {
+            const responses = getResponses();
+            
+            // Calculate stats
+            const totalResponses = responses.length;
+            const correctResponses = responses.filter(r => r.correct).length;
+            const accuracy = totalResponses > 0 ? Math.round((correctResponses / totalResponses) * 100) : 0;
+            const uniqueStudents = new Set(responses.map(r => r.studentName)).size;
+
+            // Group by question
+            const byQuestion = {};
+            responses.forEach(r => {
+                if (!byQuestion[r.questionId]) {
+                    byQuestion[r.questionId] = { correct: 0, wrong: 0 };
+                }
+                if (r.correct) byQuestion[r.questionId].correct++;
+                else byQuestion[r.questionId].wrong++;
+            });
+
+            return `
+                ${renderNavTabs()}
+                <div class="header">
+                    <h1>📊 Teacher Dashboard</h1>
+                    <p class="subtitle">Live response monitoring</p>
+                </div>
+                <div class="dashboard container">
+                    <div class="dashboard-header">
+                        <h2>Response Statistics</h2>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="refresh-btn" id="refreshBtn">🔄 Refresh</button>
+                            <button class="clear-btn" id="clearBtn">🗑️ Clear All</button>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">${totalResponses}</div>
+                            <div class="stat-label">Total Responses</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${uniqueStudents}</div>
+                            <div class="stat-label">Unique Students</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${accuracy}%</div>
+                            <div class="stat-label">Accuracy Rate</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${correctResponses}</div>
+                            <div class="stat-label">Correct Answers</div>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-bottom: 16px;">Question Performance</h3>
+                    <div class="stats-grid" style="margin-bottom: 32px;">
+                        ${quizData.questions.map(q => {
+                            const stats = byQuestion[q.id] || { correct: 0, wrong: 0 };
+                            const total = stats.correct + stats.wrong;
+                            const pct = total > 0 ? Math.round((stats.correct / total) * 100) : 0;
+                            return `
+                                <div class="stat-card">
+                                    <div class="stat-value" style="font-size: 1.5rem;">${pct}%</div>
+                                    <div class="stat-label">Q${q.id}: ${total} responses</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+
+                    <h3 style="margin-bottom: 16px;">Recent Responses</h3>
+                    ${responses.length > 0 ? `
+                        <div style="overflow-x: auto;">
+                            <table class="responses-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Student</th>
+                                        <th>Question</th>
+                                        <th>Answer</th>
+                                        <th>Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${responses.slice().reverse().slice(0, 50).map(r => `
+                                        <tr>
+                                            <td style="font-family: 'Space Mono', monospace; font-size: 0.8rem;">
+                                                ${new Date(r.timestamp).toLocaleTimeString()}
+                                            </td>
+                                            <td>${r.studentName}</td>
+                                            <td>Q${r.questionId}</td>
+                                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                ${formatAnswer(r.answer)}
+                                            </td>
+                                            <td>
+                                                <span class="status-badge ${r.correct ? 'correct' : 'wrong'}">
+                                                    ${r.correct ? '✓ Correct' : '✗ Wrong'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <p>No responses yet. Students can start answering questions!</p>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        function formatAnswer(answer) {
+            if (Array.isArray(answer)) {
+                return answer.join(', ');
+            }
+            if (typeof answer === 'boolean') {
+                return answer ? 'True' : 'False';
+            }
+            return answer;
+        }
+
+        function renderQRCodes() {
+            return `
+                ${renderNavTabs()}
+                <div class="header">
+                    <h1>📱 QR Code Generator</h1>
+                    <p class="subtitle">Generate QR codes for each question</p>
+                </div>
+                <div class="qr-generator container">
+                    <div class="url-input-section">
+                        <label>Base URL (where you host this quiz):</label>
+                        <input type="text" id="baseUrlInput" value="${state.baseUrl}" placeholder="https://yoursite.com/quiz.html">
+                        <button class="submit-btn" style="margin-top: 16px;" id="regenerateQRBtn">
+                            Generate QR Codes
+                        </button>
+                    </div>
+
+                    <div class="qr-grid" id="qrGrid">
+                        ${quizData.questions.map(q => `
+                            <div class="qr-card">
+                                <h3>Question ${q.id}</h3>
+                                <div class="qr-code-container" id="qr-${q.id}"></div>
+                                <div class="qr-url" id="url-${q.id}"></div>
+                                <button class="download-btn" data-qr="${q.id}">Download PNG</button>
+                            </div>
+                        `).join('')}
+                        
+                        <div class="qr-card">
+                            <h3>🎯 All Questions</h3>
+                            <div class="qr-code-container" id="qr-all"></div>
+                            <div class="qr-url" id="url-all"></div>
+                            <button class="download-btn" data-qr="all">Download PNG</button>
+                        </div>
+
+                        <div class="qr-card">
+                            <h3>📊 Dashboard</h3>
+                            <div class="qr-code-container" id="qr-dashboard"></div>
+                            <div class="qr-url" id="url-dashboard"></div>
+                            <button class="download-btn" data-qr="dashboard">Download PNG</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateQRCodes() {
+            const baseUrl = document.getElementById('baseUrlInput')?.value || state.baseUrl;
+            
+            // Clear existing QR codes
+            document.querySelectorAll('.qr-code-container').forEach(el => {
+                el.innerHTML = '';
+            });
+
+            // Generate QR for each question
+            quizData.questions.forEach(q => {
+                const url = `${baseUrl}?q=${q.id}`;
+                const container = document.getElementById(`qr-${q.id}`);
+                const urlDisplay = document.getElementById(`url-${q.id}`);
+                
+                if (container) {
+                    new QRCode(container, {
+                        text: url,
+                        width: 128,
+                        height: 128,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                }
+                if (urlDisplay) {
+                    urlDisplay.textContent = url;
+                }
+            });
+
+            // Generate QR for all questions (main quiz)
+            const allUrl = baseUrl;
+            const allContainer = document.getElementById('qr-all');
+            const allUrlDisplay = document.getElementById('url-all');
+            if (allContainer) {
+                new QRCode(allContainer, {
+                    text: allUrl,
+                    width: 128,
+                    height: 128,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            }
+            if (allUrlDisplay) {
+                allUrlDisplay.textContent = allUrl;
+            }
+
+            // Generate QR for dashboard
+            const dashUrl = `${baseUrl}?view=dashboard`;
+            const dashContainer = document.getElementById('qr-dashboard');
+            const dashUrlDisplay = document.getElementById('url-dashboard');
+            if (dashContainer) {
+                new QRCode(dashContainer, {
+                    text: dashUrl,
+                    width: 128,
+                    height: 128,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            }
+            if (dashUrlDisplay) {
+                dashUrlDisplay.textContent = dashUrl;
+            }
+        }
+
+        // =============================================
+        // EVENT HANDLERS
+        // =============================================
+        function attachEventListeners() {
+            // Navigation tabs
+            document.querySelectorAll('.nav-tab[data-view]').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    state.view = tab.dataset.view;
+                    history.pushState({}, '', state.view === 'quiz' ? '?' : `?view=${state.view === 'qrcodes' ? 'qr' : state.view}`);
+                    render();
+                });
+            });
+
+            // Question navigation
+            document.querySelectorAll('.nav-tab[data-question]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.currentQuestion = parseInt(btn.dataset.question);
+                    history.pushState({}, '', `?q=${state.currentQuestion}`);
+                    render();
+                });
+            });
+
+            // Name input
+            const startBtn = document.getElementById('startQuizBtn');
+            const nameInput = document.getElementById('studentNameInput');
+            if (startBtn && nameInput) {
+                startBtn.addEventListener('click', () => {
+                    const name = nameInput.value.trim();
+                    if (name) {
+                        state.studentName = name;
+                        localStorage.setItem('quiz_student_name', name);
+                        render();
+                    }
+                });
+                nameInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        startBtn.click();
+                    }
+                });
+            }
+
+            // Option selection (single choice)
+            document.querySelectorAll('.option-item[data-clickable][data-option]').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    const question = quizData.questions.find(q => q.id === state.currentQuestion);
+                    const optIndex = parseInt(opt.dataset.option);
+                    
+                    if (question.type === 'multiple') {
+                        const current = state.selectedAnswers[state.currentQuestion] || [];
+                        if (current.includes(optIndex)) {
+                            state.selectedAnswers[state.currentQuestion] = current.filter(i => i !== optIndex);
+                        } else {
+                            state.selectedAnswers[state.currentQuestion] = [...current, optIndex];
+                        }
+                    } else {
+                        state.selectedAnswers[state.currentQuestion] = optIndex;
+                    }
+                    render();
+                });
+            });
+
+            // True/False selection
+            document.querySelectorAll('.option-item[data-clickable][data-tf]').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    state.selectedAnswers[state.currentQuestion] = opt.dataset.tf === 'true';
+                    render();
+                });
+            });
+
+            // Fill in blank input
+            const fillInput = document.getElementById('fillBlankInput');
+            if (fillInput) {
+                fillInput.addEventListener('input', (e) => {
+                    state.selectedAnswers[state.currentQuestion] = e.target.value;
+                    document.getElementById('submitAnswerBtn').disabled = !e.target.value.trim();
+                });
+            }
+
+            // Submit answer
+            const submitBtn = document.getElementById('submitAnswerBtn');
+            if (submitBtn) {
+                submitBtn.addEventListener('click', () => {
+                    const question = quizData.questions.find(q => q.id === state.currentQuestion);
+                    const answer = state.selectedAnswers[state.currentQuestion];
+                    let isCorrect = false;
+
+                    switch(question.type) {
+                        case 'single':
+                            isCorrect = answer === question.correct;
+                            break;
+                        case 'multiple':
+                            isCorrect = Array.isArray(answer) && 
+                                answer.length === question.correct.length &&
+                                answer.every(a => question.correct.includes(a));
+                            break;
+                        case 'truefalse':
+                            isCorrect = answer === question.correct;
+                            break;
+                        case 'fillblank':
+                            const userAnswer = answer.trim().toLowerCase();
+                            isCorrect = question.correct.some(c => c.toLowerCase() === userAnswer);
+                            break;
+                    }
+
+                    state.submitted[state.currentQuestion] = { correct: isCorrect };
+
+                    // Save response
+                    saveResponse({
+                        studentName: state.studentName,
+                        questionId: state.currentQuestion,
+                        answer: answer,
+                        correct: isCorrect
+                    });
+
+                    render();
+                });
+            }
+
+            // Dashboard refresh
+            const refreshBtn = document.getElementById('refreshBtn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', render);
+            }
+
+            // Dashboard clear
+            const clearBtn = document.getElementById('clearBtn');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    if (confirm('Are you sure you want to clear all responses?')) {
+                        clearResponses();
+                        render();
+                    }
+                });
+            }
+
+            // Regenerate QR codes
+            const regenBtn = document.getElementById('regenerateQRBtn');
+            if (regenBtn) {
+                regenBtn.addEventListener('click', () => {
+                    state.baseUrl = document.getElementById('baseUrlInput').value;
+                    generateQRCodes();
+                });
+            }
+
+            // Download QR codes
+            document.querySelectorAll('.download-btn[data-qr]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const qrId = btn.dataset.qr;
+                    const container = document.getElementById(`qr-${qrId}`);
+                    const canvas = container?.querySelector('canvas');
+                    if (canvas) {
+                        const link = document.createElement('a');
+                        link.download = `qr-question-${qrId}.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    }
+                });
+            });
+        }
+
+        // =============================================
+        // INITIALIZE
+        // =============================================
+        render();
+
+        // Auto-refresh dashboard every 5 seconds
+        setInterval(() => {
+            if (state.view === 'dashboard') {
+                render();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
