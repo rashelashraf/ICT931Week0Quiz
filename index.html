@@ -1064,59 +1064,106 @@
                 ]
             },
             2: {
-                title: "Week 2: Hazard Identification",
-                subtitle: "Recognizing workplace hazards",
+                title: "Week 2: Planning for Organizational Readiness",
+                subtitle: "Planning for Organizational Readiness",
                 questions: [
                     {
                         id: 1,
-                        type: "single",
-                        question: "Which of the following is an example of a physical hazard?",
+                        type: "multiple",
+                        question: "Which of the following are elements required to begin the Contingency Planning (CP) process? (Select all that apply)",
                         options: [
-                            "Stress from workload",
-                            "Wet floor causing slips",
-                            "Chemical exposure",
-                            "Workplace bullying"
+                            "Contingency Planning Management Team (CPMT)",
+                            "Business Impact Analysis (BIA)",
+                            "Marketing Strategy Plan",
+                            "Planning methodology",
+                            "Access to financial resources"
+                        ],
+                        correct: [0, 1, 3, 4]
+                    },
+                    {
+                        id: 2,
+                        type: "single",
+                        question: "Which team is primarily responsible for managing and conducting the overall CP process?",
+                        options: [
+                            "Risk Management (RM) Team",
+                            "Contingency Planning Management Team (CPMT)",
+                            "IT Help Desk",
+                            "External Auditor"
                         ],
                         correct: 1
                     },
                     {
-                        id: 2,
-                        type: "multiple",
-                        question: "Which methods can be used to identify hazards? (Select all that apply)",
-                        options: [
-                            "Workplace inspections",
-                            "Reviewing incident reports",
-                            "Ignoring near-misses",
-                            "Consulting with employees"
-                        ],
-                        correct: [0, 1, 3]
-                    },
-                    {
                         id: 3,
                         type: "truefalse",
-                        question: "Biological hazards include bacteria, viruses, and fungi.",
+                        question: "The purpose of the CP policy is to define the scope of CP operations and establish managerial intent.",
                         correct: true
                     },
                     {
                         id: 4,
-                        type: "single",
-                        question: "Ergonomic hazards are related to:",
+                        type: "fillblank",
+                        question: "The __________ is an investigation and assessment of the impact that various events or incidents can have on the organization.",
+                        correct: ["Business Impact Analysis", "BIA", "business impact analysis"]
+                    },
+                    {
+                        id: 5,
+                        type: "multiple",
+                        question: "Which of the following are stages of the CPMT’s Business Impact Analysis (BIA)? (Select all that apply)",
                         options: [
-                            "Chemical substances",
-                            "Radiation exposure",
-                            "Body positioning and repetitive movements",
-                            "Fire risks"
+                            "Assessing mission/business processes and recovery criticality",
+                            "Identifying resource requirements",
+                            "Designing firewall rules",
+                            "Identifying recovery priorities"
+                        ],
+                        correct: [0, 1, 3]
+                    },
+                    {
+                        id: 6,
+                        type: "fillblank",
+                        question: "In weighted ranking of business processes, the sum of all criterion weights must equal __________.",
+                        correct: ["1.0", "1"]
+                    },
+                    {
+                        id: 7,
+                        type: "single",
+                        question: "If an online banking system crashes at 10:00 AM and must be restored by 2:00 PM, this requirement defines which metric?",
+                        options: [
+                            "Recovery Point Objective (RPO)",
+                            "Recovery Time Objective (RTO)",
+                            "Work Recovery Time (WRT)",
+                            "Business Impact Analysis (BIA)"
+                        ],
+                        correct: 1
+                    },
+                    {
+                        id: 8,
+                        type: "single",
+                        question: "Which downtime metric defines how long a system can be unavailable before serious business damage occurs?",
+                        options: [
+                            "Recovery Time Objective (RTO)",
+                            "Recovery Point Objective (RPO)",
+                            "Maximum Tolerable Downtime (MTD)",
+                            "Work Recovery Time (WRT)"
                         ],
                         correct: 2
                     },
                     {
-                        id: 5,
-                        type: "fillblank",
-                        question: "A _______ is something that has the potential to cause harm.",
-                        correct: ["hazard", "Hazard", "HAZARD"]
-                    }
-                ]
-            },
+                        id: 9,
+                        type: "truefalse",
+                        question: "RTO must be shorter than MTD to avoid exceeding maximum tolerable downtime.",
+                        correct: true
+                    },
+                    {
+                        id: 10,
+                        type: "single",
+                        question: "According to the slides, what is the number one budgetary expense for Disaster Recovery (DR)?",
+                        options: [
+                            "Employee overtime",
+                            "Insurance",
+                            "Hardware redundancy",
+                            "Staff training"
+                        ],
+                        correct: 1
+                    },
             3: {
                 title: "Week 3: Risk Evaluation",
                 subtitle: "Assessing likelihood and severity",
